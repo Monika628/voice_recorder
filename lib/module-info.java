@@ -1,0 +1,2 @@
+module voice.recorder {
+}
