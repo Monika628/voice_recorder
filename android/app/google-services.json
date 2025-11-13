@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "17240158025",
+    "project_id": "voice-recorder-d436b",
+    "storage_bucket": "voice-recorder-d436b.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:17240158025:android:7ec4541bab373f097e3498",
+        "android_client_info": {
+          "package_name": "com.techqrt_voice_recorder"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAr5H6oTVIH7yfKoaXG0yUZldzlygH7B7s"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

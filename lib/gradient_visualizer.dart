@@ -1,10 +1,10 @@
 import 'dart:math';
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:mic_stream/mic_stream.dart' as ms;
+import 'package:record/record.dart';
 
 class GradientVisualizer extends StatefulWidget {
-  final dynamic isActive;
+  final bool isActive;
 
   const GradientVisualizer({Key? key, this.isActive = false}) : super(key: key);
 
@@ -13,55 +13,73 @@ class GradientVisualizer extends StatefulWidget {
 }
 
 class _GradientVisualizerState extends State<GradientVisualizer> {
-  Stream<List<int>>? _micStream;
-  StreamSubscription<List<int>>? _micSubscription;
+  final AudioRecorder _recorder = AudioRecorder();
+  Timer? _animationTimer;
   List<double> bars = List.generate(100, (index) => 0.0);
+  final Random _random = Random();
 
   @override
   void initState() {
     super.initState();
-    startMicStream();
+    if (widget.isActive) {
+      startAnimation();
+    }
   }
 
-  void startMicStream() async {
-    _micStream = await ms.MicStream.microphone(
-      audioSource: ms.AudioSource.DEFAULT,
-      sampleRate: 44100,
-      channelConfig: ms.ChannelConfig.CHANNEL_IN_MONO,
-      audioFormat: ms.AudioFormat.ENCODING_PCM_16BIT,
-    );
+  @override
+  void didUpdateWidget(GradientVisualizer oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.isActive != oldWidget.isActive) {
+      if (widget.isActive) {
+        startAnimation();
+      } else {
+        stopAnimation();
+      }
+    }
+  }
 
-    _micSubscription = _micStream?.listen((data) {
-      double avgAmplitude = calculateAverageAmplitude(data);
+  void startAnimation() {
+    // Animated bars without actually recording
+    _animationTimer = Timer.periodic(const Duration(milliseconds: 50), (timer) {
       if (mounted) {
         setState(() {
-          bars = List.generate(100, (index) => avgAmplitude * Random().nextDouble() * 3);
+          bars = List.generate(
+            100,
+                (index) => _random.nextDouble() * 100 + 20, // Random heights
+          );
         });
       }
     });
   }
 
-  double calculateAverageAmplitude(List<int> data) {
-    if (data.isEmpty) return 0;
-    double sum = 0;
-    for (var value in data) {
-      sum += value.abs();
+  void stopAnimation() {
+    _animationTimer?.cancel();
+    _animationTimer = null;
+    if (mounted) {
+      setState(() {
+        bars = List.generate(100, (index) => 0.0);
+      });
     }
-    return sum / data.length;
   }
 
   @override
   void dispose() {
-    _micSubscription?.cancel();
-    _micSubscription = null;
+    _animationTimer?.cancel();
+    _recorder.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    return CustomPaint(
-      painter: _VisualizerPainter(bars),
-      child: Container(height: 200), // height of the visualizer
+    final screenWidth = MediaQuery.of(context).size.width;
+    final screenHeight = MediaQuery.of(context).size.height;
+
+    return SizedBox(
+      width: screenWidth,
+      height: screenHeight * 0.25,
+      child: CustomPaint(
+        painter: _VisualizerPainter(bars),
+      ),
     );
   }
 }
@@ -82,7 +100,7 @@ class _VisualizerPainter extends CustomPainter {
 
     for (int i = 0; i < bars.length; i++) {
       final x = i * barWidth;
-      final barHeight = bars[i];
+      final barHeight = bars[i].clamp(2.0, size.height);
       canvas.drawRect(
         Rect.fromLTWH(x, size.height - barHeight, barWidth * 0.8, barHeight),
         paint,

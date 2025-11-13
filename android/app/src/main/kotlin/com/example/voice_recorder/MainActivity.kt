@@ -1,4 +1,4 @@
-package com.example.voice_recorder
+package com.techqrt_voice_recorder
 
 import io.flutter.embedding.android.FlutterActivity
 

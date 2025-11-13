@@ -1,4 +1,3 @@
-
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:voice_recorder/audio_model.dart';
@@ -98,16 +97,22 @@ class _HistoryScreenState extends State<HistoryScreen> {
     final shouldDelete = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        backgroundColor: const Color(0xFF2a2a2a),
-        title: const Text('Delete Recording', style: TextStyle(color: Colors.white)),
+        backgroundColor: Theme.of(context).cardColor,
+        title: Text(
+            'Delete Recording',
+            style: TextStyle(color: Theme.of(context).textTheme.headlineSmall?.color)
+        ),
         content: Text(
           'Are you sure you want to delete Recording ${displayIndex + 1}?',
-          style: const TextStyle(color: Colors.white70),
+          style: TextStyle(color: Theme.of(context).textTheme.bodyMedium?.color),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancel', style: TextStyle(color: Colors.white)),
+            child: Text(
+                'Cancel',
+                style: TextStyle(color: Theme.of(context).textTheme.bodyLarge?.color)
+            ),
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
@@ -119,16 +124,13 @@ class _HistoryScreenState extends State<HistoryScreen> {
 
     if (shouldDelete == true) {
       try {
-        // Stop playing if this file is currently playing
         if (currentlyPlaying == recordingToDelete.path) {
           await _audioService.stopPlaying();
           setState(() => currentlyPlaying = null);
         }
 
-        // Get all recordings from storage
         final allRecordings = await StorageHelper.getRecordings();
 
-        // Find the actual index in the original list
         int actualIndex = -1;
         for (int i = 0; i < allRecordings.length; i++) {
           if (allRecordings[i].path == recordingToDelete.path &&
@@ -139,15 +141,11 @@ class _HistoryScreenState extends State<HistoryScreen> {
         }
 
         if (actualIndex != -1) {
-          // Delete from storage
           await StorageHelper.deleteRecording(actualIndex);
-
-          // Immediately update UI by removing from local list
           setState(() {
             recordings.removeAt(displayIndex);
           });
 
-          // Show success message
           if (mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(
@@ -157,8 +155,6 @@ class _HistoryScreenState extends State<HistoryScreen> {
               ),
             );
           }
-
-          // Reload from storage to ensure consistency
           await _loadRecordings();
         } else {
           throw Exception("Recording not found in storage");
@@ -202,42 +198,74 @@ class _HistoryScreenState extends State<HistoryScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final size = MediaQuery.of(context).size;
+
     return Scaffold(
-      backgroundColor: const   Color(0xFF1E1550),
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
-        title: const Text("Recording History", style: TextStyle(fontSize: 22, fontWeight: FontWeight.w600)),
-        backgroundColor: const  Color(0xFF1E1550),
-        foregroundColor: Colors.white,
+        title: Text(
+          "Recording History",
+          style: TextStyle(
+            fontSize: 22,
+            fontWeight: FontWeight.w600,
+            color: Theme.of(context).appBarTheme.foregroundColor,
+          ),
+        ),
+        backgroundColor: Theme.of(context).appBarTheme.backgroundColor,
+        foregroundColor: Theme.of(context).appBarTheme.foregroundColor,
         elevation: 0,
         actions: [
           IconButton(
-            icon: const Icon(Icons.refresh),
+            icon: Icon(
+              Icons.refresh,
+              color: Theme.of(context).iconTheme.color,
+            ),
             onPressed: _refreshRecordings,
             tooltip: 'Refresh',
           ),
         ],
       ),
       body: isLoading
-          ? const Center(
-        child: CircularProgressIndicator(color: Colors.white),
+          ? Center(
+        child: CircularProgressIndicator(
+          color: Theme.of(context).primaryColor,
+        ),
       )
           : recordings.isEmpty
-          ? const Center(
+          ? Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.mic_none, size: 80, color: Colors.grey),
-            SizedBox(height: 16),
-            Text("No recordings found", style: TextStyle(color: Colors.grey, fontSize: 18)),
-            SizedBox(height: 8),
-            Text("Start recording to see your files here", style: TextStyle(color: Colors.grey, fontSize: 14)),
+            Icon(
+              Icons.mic_none,
+              size: size.height * 0.1,
+              color: Theme.of(context).textTheme.bodyMedium?.color,
+            ),
+            SizedBox(height: size.height * 0.02),
+            Text(
+              "No recordings found",
+              style: TextStyle(
+                color: Theme.of(context).textTheme.bodyMedium?.color,
+                fontSize: size.width * 0.045,
+              ),
+            ),
+            SizedBox(height: size.height * 0.01),
+            Text(
+              "Start recording to see your files here",
+              style: TextStyle(
+                color: Theme.of(context).textTheme.bodyMedium?.color,
+                fontSize: size.width * 0.035,
+              ),
+            ),
           ],
         ),
       )
           : RefreshIndicator(
         onRefresh: _refreshRecordings,
+        color: Theme.of(context).primaryColor,
+        backgroundColor: Theme.of(context).cardColor,
         child: ListView.builder(
-          padding: const EdgeInsets.all(16),
+          padding: EdgeInsets.all(size.width * 0.04),
           itemCount: recordings.length,
           itemBuilder: (context, index) {
             final rec = recordings[index];
@@ -246,43 +274,80 @@ class _HistoryScreenState extends State<HistoryScreen> {
             final isPlaying = currentlyPlaying == rec.path;
 
             return Container(
-              margin: const EdgeInsets.only(bottom: 12),
+              margin: EdgeInsets.only(bottom: size.height * 0.015),
               decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.05),
+                color: Theme.of(context).cardColor?.withOpacity(0.5),
                 borderRadius: BorderRadius.circular(16),
                 border: Border.all(
-                  color: isPlaying ? Colors.red.withOpacity(0.3) : Colors.white.withOpacity(0.1),
+                  color: isPlaying
+                      ? Colors.red.withOpacity(0.3)
+                      : Theme.of(context).dividerColor.withOpacity(0.1),
                 ),
               ),
               child: ListTile(
-                contentPadding: const EdgeInsets.all(16),
+                contentPadding: EdgeInsets.all(size.width * 0.04),
                 leading: Container(
-                  width: 48,
-                  height: 48,
+                  width: size.width * 0.12,
+                  height: size.width * 0.12,
                   decoration: BoxDecoration(
-                    color: isPlaying ? Colors.red.withOpacity(0.1) : Colors.grey.withOpacity(0.1),
+                    color: isPlaying
+                        ? Colors.red.withOpacity(0.1)
+                        : Theme.of(context).cardColor?.withOpacity(0.3),
                     borderRadius: BorderRadius.circular(12),
                   ),
-                  child: Icon(Icons.mic, color: isPlaying ? Colors.red : Colors.grey, size: 24),
+                  child: Icon(
+                    Icons.mic,
+                    color: isPlaying ? Colors.red : Theme.of(context).iconTheme.color,
+                    size: size.width * 0.06,
+                  ),
                 ),
                 title: Text(
                   "Recording ${index + 1}",
-                  style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w600),
+                  style: TextStyle(
+                    color: Theme.of(context).textTheme.bodyLarge?.color,
+                    fontSize: size.width * 0.04,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
                 subtitle: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const SizedBox(height: 4),
-                    Text(_formatDateTime(rec.recordedAt), style: const TextStyle(color: Colors.grey, fontSize: 14)),
-                    const SizedBox(height: 2),
+                    SizedBox(height: size.height * 0.005),
+                    Text(
+                      _formatDateTime(rec.recordedAt),
+                      style: TextStyle(
+                        color: Theme.of(context).textTheme.bodyMedium?.color,
+                        fontSize: size.width * 0.035,
+                      ),
+                    ),
+                    SizedBox(height: size.height * 0.003),
                     Row(
                       children: [
-                        Text(_formatFileSize(fileSize), style: const TextStyle(color: Colors.grey, fontSize: 12)),
-                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            _formatFileSize(fileSize),
+                            style: TextStyle(
+                              color: Theme.of(context).textTheme.bodyMedium?.color,
+                              fontSize: size.width * 0.03,
+                            ),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        SizedBox(width: size.width * 0.02),
                         if (rec.duration.isNotEmpty)
-                          Text("• ${rec.duration}", style: const TextStyle(color: Colors.grey, fontSize: 12)),
+                          Expanded(
+                            child: Text(
+                              "• ${rec.duration}",
+                              style: TextStyle(
+                                color: Theme.of(context).textTheme.bodyMedium?.color,
+                                fontSize: size.width * 0.03,
+                              ),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
                       ],
-                    ),
+                    )
+
                   ],
                 ),
                 trailing: Row(
@@ -290,42 +355,45 @@ class _HistoryScreenState extends State<HistoryScreen> {
                   children: [
                     Container(
                       decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.1),
+                        color: Theme.of(context).cardColor?.withOpacity(0.5),
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: IconButton(
                         icon: Icon(
                           isPlaying ? Icons.stop : Icons.play_arrow,
-                          color: isPlaying ? Colors.red : Colors.white,
+                          color: isPlaying ? Colors.red : Theme.of(context).iconTheme.color,
+                          size: size.width * 0.06,
                         ),
                         onPressed: () => _play(rec.path),
                       ),
                     ),
-                    const SizedBox(width: 8),
+                    SizedBox(width: size.width * 0.02),
                     Container(
                       decoration: BoxDecoration(
                         color: Colors.green.withOpacity(0.1),
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: IconButton(
-                        icon: const Icon(Icons.share, color: Colors.green),
-                        onPressed: () => Share.shareXFiles([XFile(rec.path)], text: 'Check out my voice recording!'),
+                        icon: Icon(Icons.share, color: Colors.green, size: size.width * 0.06),
+                        onPressed: () => Share.shareXFiles(
+                          [XFile(rec.path)],
+                          text: 'Check out my voice recording!',
+                        ),
                       ),
                     ),
-                    const SizedBox(width: 8),
+                    SizedBox(width: size.width * 0.02),
                     Container(
                       decoration: BoxDecoration(
                         color: Colors.red.withOpacity(0.1),
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: IconButton(
-                        icon: const Icon(Icons.delete, color: Colors.red),
+                        icon: Icon(Icons.delete, color: Colors.red, size: size.width * 0.06),
                         onPressed: () => _deleteRecording(index),
                       ),
                     ),
                   ],
                 ),
-
               ),
             );
           },
